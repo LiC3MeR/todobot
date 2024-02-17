@@ -374,21 +374,23 @@ def edit_task(message):
                             # Обработчик ответа на запрос нового статуса
                             @bot.message_handler(func=lambda message: message.from_user.id == message.chat.id)
                             def handle_new_task_status(message):
-                                new_status = message.text
-
-                                if new_status not in ("new", "in progress", "closed"):
-                                    bot.send_message(message.chat.id, "Неверный формат статуса. Допустимые значения: new, in progress, closed.")
-                                    return
-
-                                # Сохранение нового статуса
-                                with connect_to_db() as connection:
-                                    cursor = connection.cursor()
-                                    cursor.execute("""
-                                    UPDATE tasks SET status = ? WHERE task_id = ?
-                                    """, (new_status, task_id))
-                                    connection.commit()
-
-                                bot.send_message(message.chat.id, "Статус задачи успешно изменен.")
+                              if not is_admin(message.from_user.id):
+                                bot.send_message(message.chat.id, "У вас нет доступа к этой команде.")
+                                return
+                            
+                              if message.text not in ("new", "in progress", "closed"):
+                                bot.send_message(message.chat.id, "Неверный формат статуса. Допустимые значения: new, in progress, closed.")
+                                return
+                            
+                              # Сохранение нового статуса
+                              with connect_to_db() as connection:
+                                cursor = connection.cursor()
+                                cursor.execute("""
+                                  UPDATE tasks SET status = ? WHERE task_id = ?
+                                """, (message.text, task_id))
+                                connection.commit()
+                            
+                              bot.send_message(message.chat.id, "Статус задачи успешно изменен.")
 
                     else:
                         bot.send_message(message.chat.id, "Неверный номер пункта.")
